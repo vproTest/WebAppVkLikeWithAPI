@@ -1,0 +1,119 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title – приложение ASP.NET</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    <script src="https://vk.com/js/api/openapi.js?154" type="text/javascript"></script>
+    
+</head>
+<body>
+
+    <script>
+      VK.init({
+          apiId: 6488178,
+          onlyWidgets: true
+      });
+    </script>
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>                   
+                </button>               
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("Главная страница", "Index", "Home")</li>
+                    <li>@Html.ActionLink("Первая страница", "FirstPage", "Home")</li>
+                    <li>@Html.ActionLink("Вторая страница", "SecondPage", "Home")</li>                                                    
+                </ul>
+            </div>
+        </div>
+    </div>   
+
+    <div class="container body-content">
+        @RenderBody()
+  
+        <footer>           
+        </footer>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+
+    <script>
+        @*VK.Observer.subscribe('widgets.like.liked', function (likeCount) {
+            $.ajax({
+                    url: '@Url.Action("SetLike", "Home")',
+                    type: 'POST',
+                    data: JSON.stringify({ "id":
+                        "@HttpContext.Current.Request.Url.OriginalString.Substring(@HttpContext.Current.Request.Url.OriginalString.LastIndexOf('/') + 1)" }),
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    success: function (result) {
+                        alert("Статус сохранения в базу данных: " + result.Status);
+                    },
+                    error: function(result){
+                        alert(result.Message);
+                    }
+                });
+        });*@
+
+        // делаем два ajax запроса к API:
+        // первым получаем список страниц и находим id страницы, которую лайкнули
+        // в случае успеха, вторым запросом добавляем лайк в таблицу лайков в базу данных
+
+        // для проверки ajax запросов к Web Api на локальном хосте удалить комментарий
+        //$("#but1").css("display", "block"); // этих двух 
+        //$("#but1").click(function () {  // строчек
+        VK.Observer.subscribe('widgets.like.liked', function (likeCount) {  // и закомментировать эту строку
+            $.ajax({
+                type: "GET",
+                url: "/api/Pages",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (data, status, xhr) {
+                    var id = 0;
+                    var page = "@HttpContext.Current.Request.Url.OriginalString.Substring(@HttpContext.Current.Request.Url.OriginalString.LastIndexOf('/') + 1)";
+                    for(var i=0; i<data.length; i++) {
+                        if(data[i].Name == page) {
+                            id = data[i].Id;
+                            break;
+                        }
+                    }
+                    if (id != 0) {                    
+                        $.ajax({
+                            type: "POST",
+                            url: "/api/Likes",
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            data: JSON.stringify({
+                                LkDateTime: new Date(),
+                                pageId: id
+                            }),
+                            success: function (data, status, xhr) {
+                                alert("Статус сохранения в базу данных: " + status);
+                            },
+                            error: function (xhr, status, error) {
+                                alert(xhr.responseText);
+                            }
+                        });
+                    }
+                },
+                error: function (xhr, status, error) {                    
+                    alert(xhr.responseText);
+                }
+            });
+        });
+
+    </script>
+ 
+</body>
+</html>
